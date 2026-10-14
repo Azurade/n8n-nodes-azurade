@@ -57,10 +57,28 @@ function jsonOrEmpty(text: string): IDataObject {
 	}
 }
 
+// The model catalog is public, so the editor can list models and their
+// parameters before a credential is attached to a freshly added node.
+export async function getModels(this: ILoadOptionsFunctions): Promise<Model[]> {
+	const { models } = (await this.helpers.httpRequest({
+		url: `${BASE_URL}/api/v2/models`,
+		json: true,
+	})) as { models: Model[] };
+	return models;
+}
+
+export async function getModel(this: ILoadOptionsFunctions, id: string): Promise<Model> {
+	return (await this.helpers.httpRequest({
+		url: `${BASE_URL}/api/v2/models/${encodeURIComponent(id)}`,
+		json: true,
+	})) as Model;
+}
+
 export interface ModelField {
 	name: string;
 	type: 'string' | 'integer' | 'number' | 'boolean' | 'array';
 	required: boolean;
+	default?: string | number | boolean | null;
 	enum?: string[];
 	input?: 'image' | 'video' | 'audio' | null;
 }

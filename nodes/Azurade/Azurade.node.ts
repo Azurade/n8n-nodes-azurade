@@ -13,7 +13,16 @@ import type {
 import { NodeConnectionTypes, NodeOperationError, sleep } from 'n8n-workflow';
 
 import type { Model } from './GenericFunctions';
-import { apiRequest, BASE_URL, flatten, generationBody, isFinal, label } from './GenericFunctions';
+import {
+	apiRequest,
+	BASE_URL,
+	flatten,
+	generationBody,
+	getModel,
+	getModels,
+	isFinal,
+	label,
+} from './GenericFunctions';
 
 // ponytail: fixed 5-second poll, one GET per running job per round; batch
 // lookups if workflows start submitting hundreds of items at once.
@@ -264,9 +273,7 @@ export class Azurade implements INodeType {
 	methods = {
 		loadOptions: {
 			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const { models } = (await apiRequest.call(this, 'GET', '/api/v2/models')) as unknown as {
-					models: Model[];
-				};
+				const models = await getModels.call(this);
 				return models.map((m) => ({ name: `${m.name} (${m.type})`, value: m.id }));
 			},
 		},
@@ -277,11 +284,7 @@ export class Azurade implements INodeType {
 				if (!id) {
 					return { fields: [], emptyFieldsNotice: 'Choose a model first' };
 				}
-				const model = (await apiRequest.call(
-					this,
-					'GET',
-					`/api/v2/models/${encodeURIComponent(id)}`,
-				)) as unknown as Model;
+				const model = await getModel.call(this, id);
 				return {
 					fields: model.fields.map((f): ResourceMapperField => {
 						const field: ResourceMapperField = {
@@ -299,6 +302,12 @@ export class Azurade implements INodeType {
 							field.type = 'boolean';
 						} else if (f.type === 'integer' || f.type === 'number') {
 							field.type = 'number';
+						}
+						// Every field starts at the model's own default: a toggle left
+						// untouched is sent as shown, so generate_audio (default on) must
+						// not start off.
+						if (f.default !== undefined && f.default !== null && f.type !== 'array') {
+							field.defaultValue = f.default;
 						}
 						return field;
 					}),
