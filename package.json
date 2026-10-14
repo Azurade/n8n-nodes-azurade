@@ -1,6 +1,6 @@
 {
 	"name": "n8n-nodes-azurade",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Generate images and videos with Veo, Kling, Nano Banana and 40+ more models from n8n, paid per generation with credits that never expire",
 	"license": "MIT",
 	"homepage": "https://github.com/Azurade/n8n-nodes-azurade#readme",
